@@ -1,0 +1,27 @@
+[
+  {
+	"Name": "All Services",
+	"Projects": [
+	  {
+		"Path": "CommerceHub.ApiGateway\\CommerceHub.ApiGateway.csproj",
+		"Action": "Start",
+		"DebugTarget": "http"
+	  },
+	  {
+		"Path": "CommerceHub.ProductService\\CommerceHub.ProductService.csproj",
+		"Action": "Start",
+		"DebugTarget": "http"
+	  },
+	  {
+		"Path": "CommerceHub.InventoryService\\CommerceHub.InventoryService.csproj",
+		"Action": "Start",
+		"DebugTarget": "http"
+	  },
+	  {
+		"Path": "CommerceHub.OrderService\\CommerceHub.OrderService.csproj",
+		"Action": "Start",
+		"DebugTarget": "http"
+	  }
+	]
+  }
+]

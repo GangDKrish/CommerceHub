@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="CommerceHub.ApiGateway/CommerceHub.ApiGateway.csproj" />
+  <Project Path="CommerceHub.InventoryService/CommerceHub.InventoryService.csproj" />
+  <Project Path="CommerceHub.OrderService/CommerceHub.OrderService.csproj" />
+  <Project Path="CommerceHub.ProductService/CommerceHub.ProductService.csproj" />
+</Solution>

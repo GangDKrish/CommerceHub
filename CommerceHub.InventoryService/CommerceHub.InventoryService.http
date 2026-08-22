@@ -1,0 +1,6 @@
+@CommerceHub.InventoryService_HostAddress = http://localhost:5232
+
+GET {{CommerceHub.InventoryService_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
