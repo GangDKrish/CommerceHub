@@ -72,9 +72,17 @@ public class OrderController : ControllerBase
 
             return Ok(order);
         }
+        catch (ProductNotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        }
         catch (InsufficientInventoryException ex)
         {
             return Conflict(ex.Message);
+        }
+        catch (InventoryUnavailableException ex)
+        {
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, ex.Message);
         }
     }
 }

@@ -1,6 +1,0 @@
-@CommerceHub.ApiGateway_HostAddress = http://localhost:5100
-
-GET {{CommerceHub.ApiGateway_HostAddress}}/weatherforecast/
-Accept: application/json
-
-###

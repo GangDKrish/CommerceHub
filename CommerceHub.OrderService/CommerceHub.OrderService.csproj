@@ -25,10 +25,12 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+    <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="10.2.3" />
   </ItemGroup>
 
 	<ItemGroup>
 		<Protobuf Include="..\CommerceHub.InventoryService\Protos\inventory.proto" Link="Protos\inventory.proto" GrpcServices="Client" />
+		<Protobuf Include="..\CommerceHub.ProductService\Protos\product.proto" Link="Protos\product.proto" GrpcServices="Client" />
 	</ItemGroup>
 
 </Project>

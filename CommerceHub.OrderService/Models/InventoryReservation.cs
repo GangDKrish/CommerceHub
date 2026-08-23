@@ -1,6 +1,6 @@
-﻿namespace CommerceHub.OrderService.DTOs
+﻿namespace CommerceHub.OrderService.Models
 {
-    public class CreateOrderItemRequestDTO
+    public class InventoryReservation
     {
         public Guid ProductId { get; set; }
 

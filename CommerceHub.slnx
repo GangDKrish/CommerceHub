@@ -1,5 +1,8 @@
 <Solution>
-  <Project Path="CommerceHub.ApiGateway/CommerceHub.ApiGateway.csproj" />
+  <Folder Name="/Solution Items/">
+    <File Path="Notes.txt" />
+    <File Path="ProjectSummary.txt" />
+  </Folder>
   <Project Path="CommerceHub.InventoryService/CommerceHub.InventoryService.csproj" />
   <Project Path="CommerceHub.OrderService/CommerceHub.OrderService.csproj" />
   <Project Path="CommerceHub.ProductService/CommerceHub.ProductService.csproj" />

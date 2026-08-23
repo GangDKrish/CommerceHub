@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+option csharp_namespace = "CommerceHub.ProductService";
+
+package product;
+
+service Product {
+
+  rpc GetProduct (GetProductRequest)
+	  returns (GetProductResponse);
+}
+
+message GetProductRequest {
+  string product_id = 1;
+}
+
+message GetProductResponse {
+  bool found = 1;
+  string product_id = 2;
+  string name = 3;
+  string price = 4;
+}

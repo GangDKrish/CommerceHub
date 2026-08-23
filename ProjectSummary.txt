@@ -1,0 +1,627 @@
+============================================================
+COMMERCEHUB - E-COMMERCE MICROSERVICES PLATFORM
+============================================================
+
+PROJECT OVERVIEW
+----------------
+
+CommerceHub is a .NET-based e-commerce microservices project
+designed to demonstrate practical implementation of modern
+backend architecture and distributed system concepts.
+
+The project focuses not only on implementing technologies but
+also on understanding why and where each technology is useful.
+
+The system consists of three independent business services:
+
+    1. CommerceHub.ProductService
+    2. CommerceHub.InventoryService
+    3. CommerceHub.OrderService
+
+
+------------------------------------------------------------
+ARCHITECTURE
+------------------------------------------------------------
+
+                         CLIENT
+                           |
+          +----------------+----------------+
+          |                |                |
+          v                v                v
+   ProductService    InventoryService    OrderService
+          |                ^                |
+          |                |                |
+          |              gRPC              |
+          |                |                |
+          |                +----------------+
+          |
+          v
+        SQLite
+
+
+OrderService
+     |
+     v
+In-Memory Message Queue
+     |
+     v
+Background Worker
+     |
+     v
+Order Audit
+
+
+------------------------------------------------------------
+TECHNOLOGY STACK
+------------------------------------------------------------
+
+- C#
+- .NET / ASP.NET Core
+- Entity Framework Core
+- SQLite
+- REST APIs
+- HTTP QUERY
+- gRPC
+- In-Memory Messaging using Channel<T>
+- BackgroundService
+- Swagger / OpenAPI
+- Dependency Injection
+- DTO-based contracts
+- Async/Await
+
+
+============================================================
+1. PRODUCT SERVICE
+============================================================
+
+ProductService owns the product catalog.
+
+Responsibilities:
+
+- Create products
+- Retrieve products
+- Update products
+- Delete products
+- Perform complex product queries
+
+
+STANDARD CRUD APIs
+------------------
+
+POST    /api/products
+GET     /api/products/{id}
+PUT     /api/products/{id}
+DELETE  /api/products/{id}
+
+
+Products are persisted using:
+
+    Entity Framework Core
+             +
+           SQLite
+
+
+------------------------------------------------------------
+DTO USAGE
+------------------------------------------------------------
+
+The API does not directly expose database entities.
+
+DTOs are used to separate the API contract from the
+persistence model.
+
+Example:
+
+    Product
+       |
+       v
+    ProductDTO
+       |
+       v
+    API Response
+
+
+DTO classes follow the project naming convention of appending
+"DTO" to the class name.
+
+Examples:
+
+    ProductDTO
+    ProductQueryRequestDTO
+    OrderResponseDTO
+    CreateOrderRequestDTO
+    CreateOrderItemRequestDTO
+    OrderCreatedEventDTO
+
+
+============================================================
+2. HTTP QUERY
+============================================================
+
+ProductService also demonstrates the newer HTTP QUERY method
+for complex read/query operations.
+
+The purpose is to demonstrate a safe and idempotent query
+operation where the query itself can be sent in the request
+body.
+
+
+Example:
+
+    QUERY /api/products
+
+Request:
+
+    {
+        "category": "Accessories",
+        "minPrice": 1000,
+        "maxPrice": 5000,
+        "searchTerm": "Keyboard",
+        "sortBy": "price",
+        "sortDescending": true,
+        "page": 1,
+        "pageSize": 10
+    }
+
+
+This is different from a traditional GET request such as:
+
+    GET /api/products?category=Accessories&minPrice=1000
+
+
+HTTP QUERY is useful when the query becomes more complex or
+contains many parameters that would be inconvenient to encode
+in a URL.
+
+This demonstrates awareness of modern HTTP API capabilities
+beyond traditional CRUD operations.
+
+
+============================================================
+3. INVENTORY SERVICE
+============================================================
+
+InventoryService owns inventory and stock management.
+
+Responsibilities:
+
+- Retrieve product inventory
+- Add/increase inventory
+- Reserve inventory
+- Release previously reserved inventory
+
+
+The service maintains responsibility for inventory instead of
+allowing OrderService to directly manipulate inventory data.
+
+This demonstrates service ownership and separation of
+responsibilities.
+
+
+============================================================
+4. gRPC COMMUNICATION
+============================================================
+
+OrderService communicates with InventoryService using gRPC
+when an order requires inventory reservation.
+
+
+Flow:
+
+    OrderService
+         |
+         | gRPC
+         v
+    InventoryService
+         |
+         v
+    Reserve Inventory
+
+
+Example order flow:
+
+    Create Order
+         |
+         v
+    Reserve Inventory
+         |
+         +---- Success ----> Continue
+         |
+         +---- Failure -----> Reject Order
+
+
+WHY gRPC?
+---------
+
+gRPC is used for internal service-to-service communication.
+
+It provides:
+
+- Strongly typed contracts
+- Efficient communication
+- Contract-driven service interaction
+- Good fit for backend-to-backend communication
+
+
+The project demonstrates the distinction between:
+
+    REST
+      |
+      +---- Client-facing APIs
+
+    gRPC
+      |
+      +---- Internal service-to-service communication
+
+
+============================================================
+5. DISTRIBUTED TRANSACTION AND COMPENSATION
+============================================================
+
+Creating an order can involve multiple inventory reservations.
+
+For example:
+
+    Item A -> Reserved successfully
+    Item B -> Reserved successfully
+    Item C -> Reservation failed
+
+
+Simply rejecting the order at this point would leave the
+previous reservations active.
+
+Therefore, the project implements a compensation mechanism.
+
+
+Example:
+
+    Item A -> Reserved
+    Item B -> Reserved
+    Item C -> Failed
+                   |
+                   v
+             Compensation
+                   |
+             +-----+-----+
+             |           |
+             v           v
+          Release A   Release B
+             |
+             v
+        Order rejected
+
+
+This demonstrates an important distributed systems concept:
+
+    A distributed operation cannot always rely on one
+    traditional database transaction across multiple services.
+
+Instead, completed operations may need compensating actions
+when a later operation fails.
+
+
+============================================================
+6. IN-MEMORY ASYNCHRONOUS MESSAGING
+============================================================
+
+OrderService demonstrates the producer-consumer messaging
+pattern using an in-memory queue implemented with .NET
+Channel<T>.
+
+
+Flow:
+
+    OrderService
+         |
+         v
+    OrderCreatedEventDTO
+         |
+         v
+    In-Memory Queue
+         |
+         v
+    Background Worker
+
+
+The queue is used for asynchronous post-order processing.
+
+The project intentionally uses an in-memory queue instead of
+RabbitMQ or another external broker to demonstrate the
+messaging pattern without introducing additional infrastructure.
+
+
+IMPORTANT LIMITATIONS
+---------------------
+
+Because the queue is in memory:
+
+- Messages are not durable
+- Messages can be lost if the application terminates
+- The queue is suitable for a single-process demonstration
+- It is not a replacement for a production distributed
+  message broker
+
+
+In a production environment, this could be replaced with
+technologies such as:
+
+- RabbitMQ
+- Azure Service Bus
+- Kafka
+
+depending on the requirements.
+
+
+============================================================
+7. BACKGROUND PROCESSING
+============================================================
+
+A .NET BackgroundService consumes messages from the in-memory
+queue.
+
+Flow:
+
+    OrderCreatedEventDTO
+            |
+            v
+       Channel<T>
+            |
+            v
+    OrderMessageBackgroundService
+            |
+            v
+       Process Event
+
+
+The background worker allows secondary processing to happen
+independently from the main order creation request.
+
+
+============================================================
+8. ORDER AUDITING
+============================================================
+
+The asynchronous messaging system is used for a real business
+purpose rather than simply writing a console log.
+
+When an order is successfully created:
+
+    Order Created
+         |
+         v
+    OrderCreatedEventDTO
+         |
+         v
+    In-Memory Queue
+         |
+         v
+    Background Worker
+         |
+         v
+    Create OrderAudit record
+         |
+         v
+    SQLite
+
+
+Example audit record:
+
+    OrderId       EventType       CreatedAt
+    ------------------------------------------------
+    12345         OrderCreated    2026-08-24...
+
+
+The main order creation process does not need to wait for the
+audit processing to complete.
+
+This demonstrates asynchronous processing of secondary or
+non-critical work.
+
+
+============================================================
+9. COMPLETE ORDER FLOW
+============================================================
+
+The complete order creation flow is:
+
+    Client
+      |
+      v
+    OrderService API
+      |
+      v
+    CreateOrderAsync
+      |
+      v
+    Reserve Inventory using gRPC
+      |
+      +--------------------------+
+      |                          |
+      v                          v
+    Success                    Failure
+      |                          |
+      v                          v
+    Create Order             Compensation
+      |                          |
+      v                          v
+    Save Order               Release previous
+      |                      reservations
+      v
+    Create OrderCreatedEventDTO
+      |
+      v
+    Enqueue Event
+      |
+      v
+    Return API Response
+      |
+      |
+      |       ASYNCHRONOUS
+      |       PROCESSING
+      |
+      v
+    Background Worker
+      |
+      v
+    Create OrderAudit
+      |
+      v
+    Save Audit to SQLite
+
+
+============================================================
+10. DATABASE AND ENTITY FRAMEWORK CORE
+============================================================
+
+Entity Framework Core is used for persistence.
+
+SQLite is currently used as the database to keep the project
+simple and easy to run locally.
+
+Main data areas include:
+
+    Product
+    Inventory
+    Order
+    OrderItem
+    OrderAudit
+
+
+EF Core handles:
+
+- Database access
+- Entity mapping
+- Migrations
+- Persistence
+
+
+============================================================
+11. API CONTRACTS AND DTOs
+============================================================
+
+DTOs are used to prevent API contracts from being tightly
+coupled to database entities.
+
+Examples:
+
+    ProductDTO
+        -> Product API response
+
+    CreateOrderRequestDTO
+        -> Create order request
+
+    CreateOrderItemRequestDTO
+        -> Order item request
+
+    OrderResponseDTO
+        -> Order API response
+
+    ProductQueryRequestDTO
+        -> HTTP QUERY request
+
+    OrderCreatedEventDTO
+        -> Internal asynchronous event
+
+
+This allows the persistence model and external contracts to
+evolve independently.
+
+
+============================================================
+12. TESTING
+============================================================
+
+The APIs can be tested using Swagger/OpenAPI.
+
+Typical testing flow:
+
+    1. Start ProductService
+    2. Start InventoryService
+    3. Start OrderService
+    4. Create products
+    5. Add inventory
+    6. Create an order
+    7. Verify inventory reservation
+    8. Verify order creation
+    9. Test insufficient inventory
+   10. Verify compensation
+   11. Verify asynchronous OrderAudit creation
+   12. Test HTTP QUERY product searches
+
+
+============================================================
+13. KEY CONCEPTS DEMONSTRATED
+============================================================
+
+MICROSERVICES
+    Independent services with clear business responsibilities.
+
+REST
+    Client-facing CRUD APIs.
+
+HTTP QUERY
+    Modern safe/idempotent query mechanism for complex queries.
+
+gRPC
+    Strongly typed internal service-to-service communication.
+
+DISTRIBUTED TRANSACTIONS
+    Understanding that operations spanning multiple services
+    cannot simply rely on one database transaction.
+
+COMPENSATION
+    Releasing previously completed operations when a later
+    distributed operation fails.
+
+ASYNCHRONOUS MESSAGING
+    Decoupling secondary processing from the main request.
+
+BACKGROUND PROCESSING
+    Processing queued messages independently using
+    BackgroundService.
+
+DTOs
+    Separating API/message contracts from persistence entities.
+
+ENTITY FRAMEWORK CORE
+    ORM and database persistence.
+
+SQLITE
+    Lightweight local persistence for the project.
+
+
+============================================================
+INTERVIEW SUMMARY
+============================================================
+
+CommerceHub is a three-service e-commerce system built using
+ASP.NET Core.
+
+Product, Inventory and Order responsibilities are separated
+into independent services.
+
+REST is used for client-facing APIs, while OrderService uses
+strongly typed gRPC communication with InventoryService for
+inventory reservation.
+
+Because order creation can involve multiple inventory
+reservations, a compensation mechanism is implemented to
+release previously reserved inventory when a later reservation
+fails.
+
+The project also demonstrates asynchronous processing using
+an in-memory producer-consumer queue and BackgroundService.
+After an order is successfully created, an OrderCreated event
+is queued and processed asynchronously to create an OrderAudit
+record.
+
+ProductService additionally demonstrates the modern HTTP QUERY
+method for complex, safe read operations.
+
+EF Core with SQLite is used for persistence, while DTOs are
+used to separate API and messaging contracts from database
+entities.
+
+The project was intentionally designed to demonstrate not only
+how these technologies work, but also the reasoning behind
+when each architectural approach should be used.

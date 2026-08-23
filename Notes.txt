@@ -1,0 +1,38 @@
+The external client communicates with OrderService through REST. OrderService doesn't call InventoryService's REST API. 
+It uses a strongly typed gRPC client generated from our .proto contract.
+                    Client / Swagger
+                          │
+                          │ REST
+                          ▼
+                  ┌───────────────┐
+                  │ OrderService  │
+                  └───────┬───────┘
+                          │
+                          │ gRPC
+                          ▼
+                  ┌───────────────┐
+                  │Inventory      │
+                  │Service        │
+                  └───────────────┘
+
+RabbitMq is used - 
+I used synchronous gRPC where the caller requires an immediate response, and RabbitMQ for asynchronous event-driven communication where downstream processing doesn't need to block the main transaction.
+
+Used gRPC for synchronous service-to-service communication where OrderService needs an immediate response from InventoryService, such as inventory reservation.
+Currently will use in-memory queue and messaging system
+
+future optimization:
+I use RabbitMQ for asynchronous event-driven communication, such as publishing an OrderCreated event for downstream services. 
+This prevents the order workflow from being tightly coupled to services that don't need to participate synchronously.
+
+I used an in-memory producer-consumer queue for non-critical post-order processing.
+The order transaction doesn't wait for the audit operation.
+Once the order is persisted, an OrderCreatedEventDTO is queued and a hosted background service processes it asynchronously.
+
+why not rabbitMQ ? 
+
+For this project's single-process demonstration, an in-memory Channel<T> was sufficient. 
+I understand that it isn't durable and messages are lost on process termination. In a distributed production environment, I'd replace the in-memory channel with a durable broker such as RabbitMQ or Azure Service Bus
+
+Auditing happens asynchronously. [in-memory queue][background service] pattern is used to decouple the order transaction from the audit operation.
+The order transaction doesn't wait for the audit operation. Once the order is persisted, an OrderCreatedEventDTO is queued and a hosted background service processes it asynchronously.

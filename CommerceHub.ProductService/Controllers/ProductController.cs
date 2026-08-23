@@ -53,6 +53,38 @@ public class ProductController : ControllerBase
         });
     }
 
+    [HttpGet("search")]
+    public async Task<ActionResult<IEnumerable<ProductResponseDTO>>> SearchProducts(
+        [FromQuery] ProductQueryRequestDTO queryRequest)
+    {
+        var query = _dbContext.Products.AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(queryRequest.Category))
+            query = query.Where(p => p.Category == queryRequest.Category);
+
+        if (queryRequest.MinPrice.HasValue)
+            query = query.Where(p => p.Price >= queryRequest.MinPrice.Value);
+        
+
+        if (queryRequest.MaxPrice.HasValue)
+            query = query.Where(p => p.Price <= queryRequest.MaxPrice.Value);
+
+        if (queryRequest.SearchTerm?.Length > 0)
+            query = query.Where(p => p.Name.ToLower().Contains(queryRequest.SearchTerm.ToLower()));
+
+        var products = await query
+            .Select(p => new ProductResponseDTO()
+            {
+                Id = p.Id,
+                Name = p.Name,
+                Price = p.Price,
+                Category = p.Category
+            })
+            .ToListAsync();
+
+        return Ok(products);
+    }
+
     [HttpPost]
     public async Task<ActionResult<ProductResponseDTO>> CreateProduct(
         CreateProductRequestDTO request)
