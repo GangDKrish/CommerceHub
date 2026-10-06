@@ -986,37 +986,10 @@ Composing services through ASP.NET Core's built-in DI container.
 Using `async`/`await` for database and service communication.
 
 ---
-
-# 20. Interview Talking Points
-
-CommerceHub was designed to demonstrate practical understanding of backend and distributed-system concepts.
-
-A typical architectural explanation would be:
+# 20. Overview Summary 
 
 > "CommerceHub is a .NET 10 e-commerce microservices application consisting of Product, Inventory, and Order services. Client-facing communication uses REST, while OrderService communicates with InventoryService using strongly typed gRPC. Since an order can require multiple inventory reservations, the system implements compensation to release previously reserved inventory if a later reservation fails. After successful order creation, an OrderCreated event is placed onto an in-memory Channel<T>, which is consumed by a BackgroundService to create an audit record asynchronously. SQLite and EF Core are used for lightweight local persistence, and DTOs keep API contracts separate from database entities."
 
-### Concepts I can discuss from this project
-
-* Why use microservices?
-* Why REST vs gRPC?
-* Why should services own their data?
-* How do you handle distributed transactions?
-* What is compensation?
-* Why isn't a database transaction enough?
-* Why use asynchronous messaging?
-* Why use `Channel<T>`?
-* What are the limitations of in-memory messaging?
-* How would you replace `Channel<T>` with RabbitMQ?
-* What happens if the background worker fails?
-* What happens if inventory reservation succeeds but order creation fails?
-* How would you make the workflow more reliable?
-* How would you implement retries?
-* How would you add idempotency?
-* How would you monitor distributed requests?
-* How would you scale the services independently?
-
----
-
 # License
 
-This project is intended for learning, experimentation, portfolio demonstration, and interview preparation.
+This project is intended for learning, experimentation, portfolio demonstration.
